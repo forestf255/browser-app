@@ -1,29 +1,23 @@
 <!DOCTYPE html>
 <html>
 <body>
-<div id="display"></div>
-<form>Sensor 1:<input type="text" name="sensor1">
-    <input type="submit" value="Submit">
-</form>
-<form>Sensor 2:<input type="text" name="sensor2">
-    <input type="submit" value="Submit">
-</form>
-<form>Sensor 3:<input type="text" name="sensor3">
-    <input type="submit" value="Submit">
-</form>
+<span><input id="ipaddr" type="text"><button onclick="connect();">Connect</button></span>
+<div id="sensor_interface"></div>
 </body>
 <script>
     function getValues() {
-    fetch('http://127.0.0.1:5000/')
+    fetch('http://' + document.ipaddr + ':5000/')
         // Wait until all HTML text is received
         .then(response => response.text())
         .then(html => {
             let parser = new DOMParser();
             let doc = parser.parseFromString(html, "text/html");
-            let readings = doc.getElementsByClassName("readings");
-            // Place the table from the HTTP get into our "display" div
+            let sensor_interface = document.getElementById('sensor_interface');
+            sensor_interface.innerHTML = '';
             // TODO: Maybe add HTML sanitization here
-            document.getElementById("display").innerHTML = readings[0].outerHTML;
+            for (let v of doc.getElementsByClassName('display')) {
+                sensor_interface.innerHTML += v.outerHTML;
+            }
         })
     }
 
@@ -32,15 +26,27 @@
         event.preventDefault();
         // Creates FormData from HTML form element
         var formData = new FormData(event.target);
-        fetch('http://127.0.0.1:5000/', {
-            method: 'POST',
+        fetch('http://' + document.ipaddr + ':5000/', {
+            method: 'PUT',
             body: formData
         }).then(response => getValues());
     }
 
-    getValues();
-    // Refresh readings table with 1 second interval
-    window.setInterval(getValues, 1000);
-    document.addEventListener("submit", setValues, true);
+    function connect(event) {
+        document.ipaddr = document.getElementById('ipaddr').value;
+        localStorage.setItem('ipaddr', document.ipaddr);
+
+        getValues();
+        // Refresh readings table with 1 second interval
+        window.setInterval(getValues, 5000);
+        document.addEventListener("submit", setValues, true);
+    }
+
+    let ipaddr = localStorage.getItem('ipaddr');
+    if (ipaddr !== null) {
+        document.ipaddr = ipaddr;
+        document.getElementById('ipaddr').value = ipaddr;
+        connect();
+    }
 </script>
 </html>

@@ -12,9 +12,9 @@ sensorData = {
 }
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET', 'PUT'])
 def index():
-    if request.method == 'POST':
+    if request.method == 'PUT':
         for k in sensorData.keys():
             if k in request.form:
                 sensorData[k] = int(request.form[k])
