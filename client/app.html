@@ -6,45 +6,50 @@
 </body>
 <script>
     function getValues() {
-    fetch('http://' + document.ipaddr + ':5000/')
-        // Wait until all HTML text is received
-        .then(response => response.text())
-        .then(html => {
-            let parser = new DOMParser();
-            let doc = parser.parseFromString(html, "text/html");
-            let sensor_interface = document.getElementById('sensor_interface');
-            sensor_interface.innerHTML = '';
-            // TODO: Maybe add HTML sanitization here
-            for (let v of doc.getElementsByClassName('display')) {
-                sensor_interface.innerHTML += v.outerHTML;
-            }
-        })
+        let ipaddr = localStorage.getItem('ipaddr');
+        fetch('http://' + ipaddr + ':5000/')
+            // Wait until all HTML text is received
+            .then(response => response.text()).catch(error=> {
+                console.error(error);
+            })
+            .then(html => {
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(html, "text/html");
+                let sensor_interface = document.getElementById('sensor_interface');
+                sensor_interface.innerHTML = '';
+                // TODO: Maybe add HTML sanitization here
+                for (let v of doc.getElementsByClassName('display')) {
+                    sensor_interface.innerHTML += v.outerHTML;
+                }
+            }).catch(error => {
+                console.error(error);
+            });
     }
 
     function setValues(event) {
         // Prevent page refresh and form submission
         event.preventDefault();
         // Creates FormData from HTML form element
-        var formData = new FormData(event.target);
-        fetch('http://' + document.ipaddr + ':5000/', {
+        let formData = new FormData(event.target);
+        let ipaddr = localStorage.getItem('ipaddr');
+        fetch('http://' + ipaddr + ':5000/', {
             method: 'PUT',
             body: formData
         }).then(response => getValues());
     }
 
     function connect(event) {
-        document.ipaddr = document.getElementById('ipaddr').value;
-        localStorage.setItem('ipaddr', document.ipaddr);
+        localStorage.setItem('ipaddr', document.getElementById('ipaddr').value);
 
         getValues();
-        // Refresh readings table with 1 second interval
+        // Refresh readings table with 5 second interval
         window.setInterval(getValues, 5000);
         document.addEventListener("submit", setValues, true);
     }
 
+    // Connect with last used IP address if available
     let ipaddr = localStorage.getItem('ipaddr');
     if (ipaddr !== null) {
-        document.ipaddr = ipaddr;
         document.getElementById('ipaddr').value = ipaddr;
         connect();
     }
